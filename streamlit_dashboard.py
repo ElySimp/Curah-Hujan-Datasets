@@ -174,6 +174,27 @@ def categorize_rainfall(value):
     else:
         return 'Hujan Sangat Lebat'
 
+def get_consistent_colors():
+    """Mengembalikan mapping warna konsisten untuk kategori dan lokasi"""
+    rainfall_colors = {
+        'Tidak Ada Data': '#d3d3d3',      # Abu-abu
+        'Tidak Hujan': '#87ceeb',         # Biru muda  
+        'Hujan Ringan': '#90ee90',        # Hijau muda
+        'Hujan Sedang': '#ffd700',        # Kuning
+        'Hujan Lebat': '#ffa500',         # Orange
+        'Hujan Sangat Lebat': '#ff4500'   # Merah orange
+    }
+    
+    location_colors = {
+        'Bogor (Kabupaten)': '#1f77b4',
+        'Bogor (Kota)': '#ff7f0e', 
+        'Bandung (Kota)': '#2ca02c',
+        'Cirebon (Kabupaten)': '#d62728',
+        'Majalengka (Kabupaten)': '#9467bd'
+    }
+    
+    return rainfall_colors, location_colors
+
 # Main dashboard
 def main():
     st.markdown('<h1 class="main-header">🌦️ Dashboard Data Cuaca BMKG Jawa Barat</h1>', unsafe_allow_html=True)
@@ -338,16 +359,33 @@ def rainfall_tab(df):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Distribusi kategori hujan
+        # Distribusi kategori hujan dengan warna konsisten
         rainfall_dist = df['curah_hujan_kategori'].value_counts()
+        
+        # Gunakan warna konsisten
+        rainfall_colors, _ = get_consistent_colors()
+        
+        # Buat list warna sesuai urutan kategori yang muncul
+        colors = [rainfall_colors.get(category, '#cccccc') for category in rainfall_dist.index]
+        
         fig_dist = px.pie(values=rainfall_dist.values, names=rainfall_dist.index,
                          title="Sebaran Intensitas Hujan",
-                         color_discrete_sequence=px.colors.qualitative.Set3)
+                         color_discrete_sequence=colors)
         st.plotly_chart(fig_dist, use_container_width=True)
     
     with col2:
-        # Hujan bulanan
+        # Hujan bulanan dengan warna konsisten per lokasi
         monthly_rainfall = df.groupby(['nama_bulan', 'lokasi_lengkap'])['curah_hujan_clean'].mean().reset_index()
+        
+        # Warna konsisten untuk lokasi
+        location_colors = {
+            'Bogor (Kabupaten)': '#1f77b4',
+            'Bogor (Kota)': '#ff7f0e', 
+            'Bandung (Kota)': '#2ca02c',
+            'Cirebon (Kabupaten)': '#d62728',
+            'Majalengka (Kabupaten)': '#9467bd'
+        }
+        
         fig_monthly = px.box(monthly_rainfall, x='nama_bulan', y='curah_hujan_clean',
                            title="Pola Hujan Sepanjang Tahun",
                            labels={'curah_hujan_clean': 'Curah Hujan (mm)', 'nama_bulan': 'Bulan'})
@@ -388,17 +426,20 @@ def temperature_tab(df):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Rentang suhu per lokasi
+        # Rentang suhu per lokasi dengan warna konsisten
         temp_stats = df.groupby('lokasi_lengkap').agg({
             'suhu_min': 'mean',
             'suhu_max': 'mean',
             'suhu_rata': 'mean'
         }).round(1)
         
+        # Gunakan warna konsisten untuk lokasi
+        _, location_colors = get_consistent_colors()
+        
         fig_temp = go.Figure()
-        colors = px.colors.qualitative.Set2
         
         for i, location in enumerate(temp_stats.index):
+            color = location_colors.get(location, px.colors.qualitative.Set2[i % len(px.colors.qualitative.Set2)])
             fig_temp.add_trace(go.Scatter(
                 x=['Minimum', 'Rata-rata', 'Maksimum'],
                 y=[temp_stats.loc[location, 'suhu_min'], 
@@ -406,7 +447,7 @@ def temperature_tab(df):
                    temp_stats.loc[location, 'suhu_max']],
                 mode='lines+markers',
                 name=location,
-                line=dict(width=3, color=colors[i % len(colors)]),
+                line=dict(width=3, color=color),
                 marker=dict(size=8)
             ))
         
@@ -445,6 +486,9 @@ def temperature_tab(df):
         'suhu_rata': 'mean'
     }).reset_index()
     
+    # Gunakan warna konsisten
+    _, location_colors = get_consistent_colors()
+    
     # Pilihan jenis suhu untuk ditampilkan
     temp_type = st.selectbox(
         "Pilih jenis suhu:",
@@ -456,7 +500,8 @@ def temperature_tab(df):
                              color='lokasi_lengkap',
                              title=f"Tren {temp_type.replace('_', ' ').title()} Bulanan",
                              labels={temp_type: 'Suhu (°C)', 'nama_bulan': 'Bulan'},
-                             markers=True)
+                             markers=True,
+                             color_discrete_map=location_colors)
     fig_monthly_temp.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_monthly_temp, use_container_width=True)
 
@@ -501,11 +546,15 @@ def wind_humidity_tab(df):
     if len(df) > 0:
         st.subheader("🌡️ Hubungan Kelembaban dan Suhu")
         
+        # Gunakan warna konsisten
+        _, location_colors = get_consistent_colors()
+        
         fig_scatter = px.scatter(df, x='suhu_rata', y='kelembaban_rata', 
                                color='lokasi_lengkap',
                                title="Hubungan antara Suhu dan Kelembaban",
                                labels={'suhu_rata': 'Suhu Rata-rata (°C)', 
-                                      'kelembaban_rata': 'Kelembaban (%)'})
+                                      'kelembaban_rata': 'Kelembaban (%)'},
+                               color_discrete_map=location_colors)
         st.plotly_chart(fig_scatter, use_container_width=True)
 
 def timeseries_tab(df):
@@ -522,6 +571,9 @@ def timeseries_tab(df):
     
     selected_var = st.selectbox("Pilih data cuaca:", list(variables.keys()))
     
+    # Gunakan warna konsisten
+    _, location_colors = get_consistent_colors()
+    
     # Grafik time series
     if df['lokasi_lengkap'].nunique() > 1:
         daily_data = df.groupby(['tanggal', 'lokasi_lengkap'])[variables[selected_var]].mean().reset_index()
@@ -529,7 +581,8 @@ def timeseries_tab(df):
         fig_ts = px.line(daily_data, x='tanggal', y=variables[selected_var],
                         color='lokasi_lengkap',
                         title=f"Grafik Harian: {selected_var}",
-                        labels={'tanggal': 'Tanggal', variables[selected_var]: selected_var})
+                        labels={'tanggal': 'Tanggal', variables[selected_var]: selected_var},
+                        color_discrete_map=location_colors)
         fig_ts.update_layout(height=500)
         st.plotly_chart(fig_ts, use_container_width=True)
     else:
@@ -564,7 +617,8 @@ def timeseries_tab(df):
     fig_ma = px.line(ma_df, x='tanggal', y=f'MA_{window_size}',
                     color='lokasi_lengkap',
                     title=f"Tren {selected_var} (Rata-rata {window_size} Hari)",
-                    labels={'tanggal': 'Tanggal', f'MA_{window_size}': f'{selected_var} (Rata-rata)'})
+                    labels={'tanggal': 'Tanggal', f'MA_{window_size}': f'{selected_var} (Rata-rata)'},
+                    color_discrete_map=location_colors)
     fig_ma.update_layout(height=500)
     st.plotly_chart(fig_ma, use_container_width=True)
 
