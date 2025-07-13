@@ -20,73 +20,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Theme toggle
-if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = False
-
-# Sidebar theme toggle
-with st.sidebar:
-    if st.button("🌙" if not st.session_state.dark_mode else "☀️", help="Toggle Dark/Light Mode"):
-        st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
-
-# Custom CSS based on theme
-theme_colors = {
-    'light': {
-        'bg_primary': '#ffffff',
-        'bg_secondary': '#f0f2f6',
-        'text_primary': '#262730',
-        'text_secondary': '#666666',
-        'accent': '#1f77b4',
-        'sidebar_bg': '#e8f4f8'
-    },
-    'dark': {
-        'bg_primary': '#0e1117',
-        'bg_secondary': '#262730',
-        'text_primary': '#fafafa',
-        'text_secondary': '#a6a6a6',
-        'accent': '#00d4ff',
-        'sidebar_bg': '#1e1e1e'
-    }
-}
-
-current_theme = 'dark' if st.session_state.dark_mode else 'light'
-colors = theme_colors[current_theme]
-
-st.markdown(f"""
+# Custom CSS untuk styling sederhana
+st.markdown("""
 <style>
-    .main-header {{
+    .main-header {
         font-size: 2.5rem;
-        color: {colors['accent']};
+        color: #1f77b4;
         text-align: center;
         margin-bottom: 2rem;
         font-weight: bold;
-    }}
-    .metric-card {{
-        background-color: {colors['bg_secondary']};
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 0.5rem 0;
-    }}
-    .credit-footer {{
+    }
+    .credit-footer {
         position: fixed;
         bottom: 10px;
         left: 10px;
-        background-color: {colors['bg_secondary']};
+        background-color: #f0f2f6;
         padding: 0.5rem 1rem;
         border-radius: 10px;
         font-size: 0.8rem;
-        color: {colors['text_secondary']};
+        color: #666666;
         z-index: 999;
-        border: 1px solid {colors['accent']};
-    }}
-    .credit-footer a {{
-        color: {colors['accent']};
+        border: 1px solid #1f77b4;
+    }
+    .credit-footer a {
+        color: #1f77b4;
         text-decoration: none;
-    }}
-    .credit-footer a:hover {{
+    }
+    .credit-footer a:hover {
         text-decoration: underline;
-    }}
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -217,7 +179,7 @@ def main():
     st.markdown('<h1 class="main-header">🌦️ Dashboard Data Cuaca BMKG Jawa Barat</h1>', unsafe_allow_html=True)
     
     # Credit footer
-    st.markdown(f"""
+    st.markdown("""
     <div class="credit-footer">
         Made by <strong>ElySimp</strong><br>
         <a href="https://github.com/ElySimp/Curah-Hujan-Datasets" target="_blank">GitHub Repository</a>
