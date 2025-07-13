@@ -38,7 +38,7 @@ CREATE TABLE FactDataIklim (
     kelembaban_rata DECIMAL(10, 2),      -- RH_AVG
     lama_penyinaran DECIMAL(10, 2),      -- SS
     kecepatan_angin_max DECIMAL(10, 2),  -- FF_X
-    arah_angin_max VARCHAR(10),          -- DDD_X
+    arah_angin_max VARCHAR(10),          -- DDD_X (bisa angka atau huruf)
     kecepatan_angin_rata DECIMAL(10, 2), -- FF_AVG
     arah_angin_terbanyak VARCHAR(10),    -- DDD_CAR
     FOREIGN KEY (waktu_id) REFERENCES DimWaktu(waktu_id),

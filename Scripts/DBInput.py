@@ -41,6 +41,12 @@ def convert_value(val):
     except:
         return None
 
+def convert_wind_direction(val):
+    # Fungsi khusus untuk arah angin (bisa huruf atau angka)
+    if pd.isna(val) or val == '-' or val == '' or str(val).strip() == '-':
+        return None
+    return str(val).strip()
+
 # ===== UPD INFO STASIUN =====
 for loc_key, info in stasiun_info.items():
     nama_lokasi, jenis_lokasi = loc_key.split('-')
@@ -146,7 +152,12 @@ for filename in os.listdir(data_folder):
                     val = row[csv_col]
                     if csv_col == 'RR' and (row_count % log_interval == 0):
                         logging.debug(f"Raw {csv_col} value: '{val}', type: {type(val)}")
-                    data_values[db_col] = convert_value(val)
+                    
+                    # Gunakan fungsi khusus untuk arah angin
+                    if db_col in ['arah_angin_max', 'arah_angin_terbanyak']:
+                        data_values[db_col] = convert_wind_direction(val)
+                    else:
+                        data_values[db_col] = convert_value(val)
                 else:
                     data_values[db_col] = None
             
