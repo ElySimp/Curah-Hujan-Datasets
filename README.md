@@ -1,4 +1,4 @@
-# 🌦️ Dashboard Data Cuaca BMKG Jawa Barat
+# 🌦️ West Java Weather Data Dashboard
 
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
@@ -6,106 +6,111 @@
 
 > **Interactive weather dashboard for West Java meteorological data from BMKG (Indonesian Meteorological Agency)**
 
+---
+
+## 🌍 Language Versions
+
+- **🇺🇸 English**: This README (current)
+- **🇮🇩 Indonesian**: [README_ID.md](README_ID.md)
+
+---
+
 ## 📊 Dashboard Overview
 
-Dashboard interaktif yang menampilkan analisis komprehensif data cuaca harian dari 5 kota/kabupaten di Jawa Barat. Dashboard ini memungkinkan pengguna untuk mengeksplorasi pola cuaca, membandingkan kondisi antar wilayah, dan menganalisis tren temporal dengan visualisasi yang informatif.
+An interactive dashboard that provides comprehensive analysis of daily weather data from 5 cities/regencies in West Java, Indonesia. This dashboard enables users to explore weather patterns, compare conditions across regions, and analyze temporal trends with informative visualizations.
 
-### 🎯 Fitur Utama
+### 🎯 Key Features
 
 #### 🔧 **Multi-Filter System**
-- **Pilih Semua**: Menampilkan data dari semua 5 wilayah sekaligus
-- **Pilih Beberapa Lokasi**: Membandingkan 2-4 wilayah tertentu
-- **Pilih Satu Lokasi**: Fokus analisis pada satu wilayah
-- **Filter Tanggal**: Rentang waktu yang dapat disesuaikan
+- **Select All**: Display data from all 5 regions simultaneously
+- **Select Multiple Locations**: Compare 2-4 specific regions
+- **Select Single Location**: Focus analysis on one region
+- **Date Filter**: Customizable time range selection
 
-#### 🌓 **Dark/Light Mode**
-- Toggle tema gelap/terang untuk kenyamanan viewing
-- Responsif dengan semua visualisasi
+#### 📈 **5 Main Analysis Tabs**
 
-#### 📈 **5 Tab Analisis Utama**
+##### 1. 📊 **Overview**
+- Key metrics: Total data, number of regions, time range, average rainfall
+- Data completeness analysis per weather variable
+- Data distribution per region
 
-##### 1. 📊 **Ringkasan**
-- Metrik kunci: Total data, jumlah wilayah, rentang waktu, rata-rata curah hujan
-- Analisis kelengkapan data per variabel cuaca
-- Distribusi data per wilayah
+##### 2. 🌧️ **Rainfall Analysis**
+- **Intensity Categorization**: No rain, light, moderate, heavy, very heavy
+- **Seasonal Patterns**: Rainfall distribution throughout the year
+- **Regional Comparison**: Average, total, and frequency of rainfall per location
+- **Monthly Heatmap**: Rainfall patterns per month and region
 
-##### 2. 🌧️ **Analisis Hujan**
-- **Kategorisasi Intensitas**: Tidak hujan, ringan, sedang, lebat, sangat lebat
-- **Pola Musiman**: Distribusi curah hujan sepanjang tahun
-- **Perbandingan Wilayah**: Rata-rata, total, dan frekuensi hujan per lokasi
-- **Heatmap Bulanan**: Pola hujan per bulan dan wilayah
+##### 3. 🌡️ **Temperature Analysis**
+- **Temperature Profile**: Minimum, average, maximum per region
+- **Temporal Distribution**: Temperature variation throughout the period
+- **Monthly Trends**: Seasonal temperature changes with selectable types
 
-##### 3. 🌡️ **Analisis Suhu**
-- **Profil Suhu**: Minimum, rata-rata, maksimum per wilayah
-- **Distribusi Temporal**: Variasi suhu sepanjang periode
-- **Tren Bulanan**: Perubahan suhu seasonal yang dapat dipilih jenisnya
+##### 4. 💨 **Wind & Humidity**
+- **Humidity Distribution**: Box plots per region
+- **Wind Patterns**: Wind speed histograms
+- **Comparative Statistics**: Min/max/average per region
+- **Temperature-Humidity Correlation**: Scatter plot of variable relationships
 
-##### 4. 💨 **Angin & Kelembaban**
-- **Distribusi Kelembaban**: Box plot per wilayah
-- **Pola Angin**: Histogram kecepatan angin
-- **Statistik Komparatif**: Min/max/rata-rata per wilayah
-- **Korelasi Suhu-Kelembaban**: Scatter plot hubungan kedua variabel
+##### 5. 📈 **Time Series**
+- **Daily Time Series**: Day-to-day weather variable changes
+- **Moving Average**: Smooth trends with adjustable periods (3-30 days)
+- **Multi-Variable**: Weather variable selection (rain, temperature, humidity, wind)
 
-##### 5. 📈 **Grafik Waktu**
-- **Time Series Harian**: Grafik perubahan variabel cuaca dari hari ke hari
-- **Moving Average**: Tren halus dengan periode yang dapat disesuaikan (3-30 hari)
-- **Multi-Variable**: Pilihan variabel cuaca (hujan, suhu, kelembaban, angin)
+## 🗺️ Analyzed Locations
 
-## 🗺️ Lokasi yang Dianalisis
-
-| Wilayah | Jenis | Stasiun Meteorologi | ID WMO |
+| Region | Type | Meteorological Station | WMO ID |
 |---------|-------|-------------------|---------|
-| **Bogor** | Kabupaten | Stasiun Meteorologi Citeko | 96751 |
-| **Cirebon** | Kabupaten | Stasiun Klimatologi Jayapura | 97692 |
-| **Majalengka** | Kabupaten | Stasiun Meteorologi Kertajati | 96791 |
-| **Bandung** | Kota | Stasiun Geofisika Bandung | 96783 |
-| **Bogor** | Kota | Stasiun Klimatologi Jawa Barat | 96753 |
+| **Bogor** | Regency | Citeko Meteorological Station | 96751 |
+| **Cirebon** | Regency | Jayapura Climatology Station | 97692 |
+| **Majalengka** | Regency | Kertajati Meteorological Station | 96791 |
+| **Bandung** | City | Bandung Geophysical Station | 96783 |
+| **Bogor** | City | West Java Climatology Station | 96753 |
 
-## 📊 Variabel Cuaca yang Dianalisis
+## 📊 Weather Variables Analyzed
 
-### 🌧️ **Curah Hujan (RR)**
-- **Satuan**: Milimeter (mm)
-- **Kategori**:
-  - 0 mm: Tidak hujan
-  - 1-5 mm: Hujan ringan
-  - 6-20 mm: Hujan sedang
-  - 21-50 mm: Hujan lebat
-  - 50+ mm: Hujan sangat lebat
+### 🌧️ **Rainfall (RR)**
+- **Unit**: Millimeter (mm)
+- **Categories**:
+  - 0 mm: No rain
+  - 1-5 mm: Light rain
+  - 6-20 mm: Moderate rain
+  - 21-50 mm: Heavy rain
+  - 50+ mm: Very heavy rain
 
-### 🌡️ **Suhu**
-- **Suhu Minimum (TN)**: Suhu terdingin dalam sehari
-- **Suhu Maksimum (TX)**: Suhu terpanas dalam sehari  
-- **Suhu Rata-rata (TAVG)**: Rata-rata suhu sepanjang hari
-- **Satuan**: Derajat Celsius (°C)
+### 🌡️ **Temperature**
+- **Minimum Temperature (TN)**: Coldest temperature of the day
+- **Maximum Temperature (TX)**: Hottest temperature of the day  
+- **Average Temperature (TAVG)**: Daily average temperature
+- **Unit**: Degrees Celsius (°C)
 
-### 💨 **Angin**
-- **Kecepatan Angin Rata-rata (FF_AVG)**: Rata-rata kecepatan angin harian
-- **Kecepatan Angin Maksimum (FF_X)**: Kecepatan angin tertinggi dalam sehari
-- **Arah Angin (DDD_X, DDD_CAR)**: Arah angin dominan
-- **Satuan**: Meter per detik (m/s)
+### 💨 **Wind**
+- **Average Wind Speed (FF_AVG)**: Daily average wind speed
+- **Maximum Wind Speed (FF_X)**: Highest wind speed of the day
+- **Wind Direction (DDD_X, DDD_CAR)**: Dominant wind direction
+- **Unit**: Meters per second (m/s)
 
-### 🌫️ **Kelembaban & Lainnya**
-- **Kelembaban Rata-rata (RH_AVG)**: Persentase kelembaban udara (%)
-- **Lama Penyinaran Matahari (SS)**: Durasi sinar matahari (jam)
+### 🌫️ **Humidity & Others**
+- **Average Humidity (RH_AVG)**: Air humidity percentage (%)
+- **Sunshine Duration (SS)**: Duration of sunshine (hours)
 
 ## 🔧 Data Processing & Quality
 
 ### 📝 **Data Cleaning**
-- **Kode Khusus Curah Hujan**:
-  - `8888`: Tidak dapat diukur
-  - `9999`: Tidak ada data
-  - `-`: Data kosong
-- **Handling**: Semua nilai khusus dikonversi menjadi NULL untuk analisis yang akurat
+- **Special Rainfall Codes**:
+  - `8888`: Cannot be measured
+  - `9999`: No data available
+  - `-`: Empty data
+- **Handling**: All special values converted to NULL for accurate analysis
 
 ### 🏗️ **Database Schema (Star Schema)**
 ```sql
--- Tabel Dimensi Waktu
+-- Time Dimension Table
 DimWaktu: waktu_id, tanggal, bulan, tahun, nama_bulan
 
--- Tabel Dimensi Lokasi  
+-- Location Dimension Table  
 DimLokasi: lokasi_id, nama_lokasi, jenis_lokasi, nama_stasiun, koordinat
 
--- Tabel Fakta Data Iklim
+-- Climate Data Fact Table
 FactDataIklim: fact_id, waktu_id, lokasi_id, curah_hujan, suhu_min, 
                suhu_max, suhu_rata, kelembaban_rata, kecepatan_angin, etc.
 ```
@@ -124,8 +129,8 @@ FactDataIklim: fact_id, waktu_id, lokasi_id, curah_hujan, suhu_min,
 - **Plotly Express**: High-level plotting interface
 
 ### **Deployment**
-- **Streamlit Cloud**: Platform hosting untuk deployment
-- **GitHub**: Version control dan repository management
+- **Streamlit Cloud**: Hosting platform for deployment
+- **GitHub**: Version control and repository management
 
 ## 📦 Installation & Setup
 
@@ -184,52 +189,51 @@ Curah-Hujan-Datasets/
 
 ## 🎯 Use Cases
 
-### 🏛️ **Pemerintah & Perencanaan**
-- Perencanaan infrastruktur berbasis pola cuaca
-- Analisis risiko bencana meteorologi
-- Kebijakan mitigasi perubahan iklim
+### 🏛️ **Government & Planning**
+- Infrastructure planning based on weather patterns
+- Meteorological disaster risk analysis
+- Climate change mitigation policies
 
-### 🌾 **Pertanian & Agribisnis**
-- Perencanaan jadwal tanam berdasarkan pola hujan
-- Prediksi kebutuhan irigasi
-- Optimalisasi hasil panen
+### 🌾 **Agriculture & Agribusiness**
+- Crop planting schedule based on rainfall patterns
+- Irrigation needs prediction
+- Harvest yield optimization
 
-### 🏢 **Penelitian & Akademis**
-- Studi klimatologi regional Jawa Barat
-- Analisis tren perubahan iklim
-- Penelitian meteorologi applied
+### 🏢 **Research & Academic**
+- West Java regional climatology studies
+- Climate change trend analysis
+- Applied meteorology research
 
-### 🏗️ **Industri & Konstruksi**
-- Perencanaan proyek berbasis cuaca
-- Risk assessment untuk outdoor activities
-- Optimalisasi operasional
+### 🏗️ **Industry & Construction**
+- Weather-based project planning
+- Risk assessment for outdoor activities
+- Operational optimization
 
 ## 📈 Dashboard Insights
 
 ### 🔍 **Analytical Capabilities**
-- **Temporal Analysis**: Identifikasi pola seasonal dan trend jangka panjang
-- **Spatial Comparison**: Perbandingan kondisi cuaca antar wilayah
-- **Statistical Overview**: Deskriptif statistik komprehensif
-- **Data Quality Assessment**: Evaluasi kelengkapan dan kualitas data
+- **Temporal Analysis**: Identify seasonal patterns and long-term trends
+- **Spatial Comparison**: Compare weather conditions across regions
+- **Statistical Overview**: Comprehensive descriptive statistics
+- **Data Quality Assessment**: Evaluate data completeness and quality
 
 ### 📊 **Visualization Types**
-- **Time Series**: Line charts untuk trend temporal
+- **Time Series**: Line charts for temporal trends
 - **Distribution**: Box plots, histograms, violin plots
 - **Comparison**: Bar charts, heatmaps
-- **Correlation**: Scatter plots untuk hubungan antar variabel
-- **Categorical**: Pie charts untuk distribusi kategorikal
+- **Correlation**: Scatter plots for variable relationships
+- **Categorical**: Pie charts for categorical distributions
 
 ## 🛠️ Technical Features
 
 ### ⚡ **Performance**
-- **Caching**: Data loading dan processing cache untuk speed
+- **Caching**: Data loading and processing cache for speed
 - **Lazy Loading**: Efficient memory management
-- **Responsive**: Optimized untuk berbagai screen sizes
+- **Responsive**: Optimized for various screen sizes
 
 ### 🎨 **User Experience**
-- **Clean Interface**: Minimalist design tanpa clutter
-- **Interactive Filters**: Real-time filtering dengan feedback
-- **Theme Support**: Dark/light mode toggle
+- **Clean Interface**: Minimalist design without clutter
+- **Interactive Filters**: Real-time filtering with feedback
 - **Mobile Friendly**: Responsive design
 
 ### 🔒 **Data Security**
@@ -240,17 +244,17 @@ Curah-Hujan-Datasets/
 ## 📚 Future Enhancements
 
 ### 🚀 **Planned Features**
-- [ ] **Forecasting**: Machine learning untuk prediksi cuaca
-- [ ] **Export**: Download data dan visualizations
+- [ ] **Forecasting**: Machine learning for weather prediction
+- [ ] **Export**: Download data and visualizations
 - [ ] **Real-time Updates**: Live data integration
-- [ ] **Alert System**: Notifikasi untuk kondisi cuaca ekstrem
-- [ ] **API Integration**: RESTful API untuk external access
-- [ ] **Advanced Analytics**: Statistical testing dan modeling
+- [ ] **Alert System**: Notifications for extreme weather conditions
+- [ ] **API Integration**: RESTful API for external access
+- [ ] **Advanced Analytics**: Statistical testing and modeling
 
 ### 🌐 **Scalability**
-- [ ] **Multi-Region**: Ekspansi ke provinsi lain
-- [ ] **Historical Data**: Integrasi data historis lebih panjang
-- [ ] **Satellite Data**: Integrasi data satelit cuaca
+- [ ] **Multi-Region**: Expansion to other provinces
+- [ ] **Historical Data**: Integration of longer historical data
+- [ ] **Satellite Data**: Weather satellite data integration
 - [ ] **IoT Integration**: Real-time sensor data
 
 ## 👥 Contributing
