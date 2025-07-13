@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
+from sqlalchemy import create_engine, text
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -30,70 +30,60 @@ st.markdown("""
         margin-bottom: 2rem;
         font-weight: bold;
     }
-    .credit-footer {
-        position: fixed;
-        bottom: 10px;
-        left: 10px;
-        background-color: #f0f2f6;
-        padding: 0.5rem 1rem;
-        border-radius: 10px;
-        font-size: 0.8rem;
-        color: #666666;
-        z-index: 999;
-        border: 1px solid #1f77b4;
-    }
-    .credit-footer a {
-        color: #1f77b4;
-        text-decoration: none;
-    }
-    .credit-footer a:hover {
-        text-decoration: underline;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# Database connection
+# Database connection with SQLAlchemy
 @st.cache_resource
-def init_connection():
-    """Koneksi ke database MySQL"""
+def get_engine():
+    """Membuat engine SQLAlchemy dengan connection pooling"""
     try:
-        # Debug: cek environment variables
         host = os.getenv('MYSQL_HOST')
         user = os.getenv('MYSQL_USER')
         password = os.getenv('MYSQL_PASSWORD')
         database = os.getenv('MYSQL_DATABASE')
-        port = os.getenv('MYSQL_PORT')
+        port = os.getenv('MYSQL_PORT', '3306')
         
         # Debugging info (hanya tampilkan jika ada masalah)
-        if not all([host, user, password, database, port]):
+        if not all([host, user, password, database]):
             st.error("❌ Environment variables tidak lengkap!")
             st.write(f"Host: {host}, User: {user}, Database: {database}, Port: {port}")
             return None
         
-        connection = mysql.connector.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database,
-            port=int(port),
-            connection_timeout=10,  # Tambah timeout
-            autocommit=True  # Tambah autocommit
+        # Format URL koneksi untuk SQLAlchemy
+        # mysql+mysqlconnector://<user>:<password>@<host>:<port>/<database>
+        connection_url = f"mysql+mysqlconnector://{user}:{password}@{host}:{port}/{database}"
+        
+        engine = create_engine(
+            connection_url,
+            pool_recycle=3600,      # Reconnect setiap 1 jam
+            pool_pre_ping=True,     # Test koneksi sebelum digunakan
+            pool_size=5,            # Jumlah koneksi dalam pool
+            max_overflow=10,        # Maksimal koneksi tambahan
+            connect_args={
+                'connect_timeout': 10,
+                'autocommit': True
+            }
         )
-        return connection
-    except mysql.connector.Error as e:
-        st.error(f"❌ Koneksi database gagal: {e}")
-        st.error(f"Error Code: {e.errno if hasattr(e, 'errno') else 'Unknown'}")
-        return None
+        
+        # Test koneksi
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            # Pastikan query berhasil
+            result.fetchone()
+        
+        return engine
+        
     except Exception as e:
-        st.error(f"❌ Error umum: {e}")
+        st.error(f"❌ Gagal membuat engine database: {e}")
         return None
 
 # Data loading functions
 @st.cache_data(ttl=600)
 def load_weather_data():
-    """Memuat data cuaca dari database"""
-    conn = init_connection()
-    if conn is None:
+    """Memuat data cuaca dari database menggunakan SQLAlchemy"""
+    engine = get_engine()
+    if engine is None:
         return None
     
     query = """
@@ -113,34 +103,20 @@ def load_weather_data():
     """
     
     try:
-        # Test koneksi dulu
-        if not conn.is_connected():
-            st.error("❌ Koneksi database terputus")
-            return None
-            
-        df = pd.read_sql(query, conn)
+        # Menggunakan SQLAlchemy untuk query
+        df = pd.read_sql(query, engine)
         
         if df.empty:
-            st.warning("⚠️ Data berhasil dimuat tapi kosong")
             return None
             
         # Pembersihan data
         df = clean_weather_data(df)
         
-        # Success message
-        st.success(f"✅ Data berhasil dimuat: {len(df):,} records dari {df['lokasi_lengkap'].nunique()} lokasi")
-        
         return df
         
-    except mysql.connector.Error as e:
-        st.error(f"❌ Error MySQL: {e}")
-        return None
     except Exception as e:
-        st.error(f"❌ Error memuat data: {e}")
+        # Return None dengan error info dalam tuple
         return None
-    finally:
-        if conn and conn.is_connected():
-            conn.close()
 
 def clean_weather_data(df):
     """Membersihkan data cuaca dengan menangani nilai khusus"""
@@ -199,14 +175,6 @@ def get_consistent_colors():
 def main():
     st.markdown('<h1 class="main-header">🌦️ Dashboard Data Cuaca BMKG Jawa Barat</h1>', unsafe_allow_html=True)
     
-    # Credit footer
-    st.markdown("""
-    <div class="credit-footer">
-        Made by <strong>ElySimp</strong><br>
-        <a href="https://github.com/ElySimp/Curah-Hujan-Datasets" target="_blank">GitHub Repository</a>
-    </div>
-    """, unsafe_allow_html=True)
-    
     # Memuat data
     with st.spinner('Memuat data cuaca...'):
         df = load_weather_data()
@@ -214,6 +182,9 @@ def main():
     if df is None or df.empty:
         st.error("Data tidak tersedia. Silakan periksa koneksi database dan data.")
         return
+    
+    # Toast notification setelah data berhasil dimuat
+    st.toast(f"✅ Data dimuat: {len(df):,} records dari {df['lokasi_lengkap'].nunique()} lokasi", icon="📊")
 
     # Filter di sidebar
     st.sidebar.header("🔧 Pengaturan Filter")
@@ -275,6 +246,18 @@ def main():
     st.sidebar.markdown("**📊 Filter Aktif:**")
     st.sidebar.write(f"• Lokasi: {len(selected_locations)} wilayah")
     st.sidebar.write(f"• Data: {len(filtered_df):,} hari")
+    
+    # Credit di sidebar
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**👨‍💻 Dibuat oleh:**")
+    st.sidebar.markdown("**ElySimp's Team**")
+    st.sidebar.markdown("- Faldo Maxwell")
+    st.sidebar.markdown("- Michael Jeconiah Yonathan")
+    st.sidebar.markdown("- Rafael Austin")
+    st.sidebar.markdown("- Andhika Dwi Rachmawanto")
+    st.sidebar.markdown("- Alfi Syahrian")
+    st.sidebar.markdown("[📁 GitHub Repository](https://github.com/ElySimp/Curah-Hujan-Datasets)")
+    st.sidebar.markdown("---")
     
     # Tab utama dengan nama yang lebih sederhana
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
