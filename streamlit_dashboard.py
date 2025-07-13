@@ -20,39 +20,73 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
-st.markdown("""
+# Theme toggle
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = False
+
+# Sidebar theme toggle
+with st.sidebar:
+    if st.button("🌙" if not st.session_state.dark_mode else "☀️", help="Toggle Dark/Light Mode"):
+        st.session_state.dark_mode = not st.session_state.dark_mode
+        st.rerun()
+
+# Custom CSS based on theme
+theme_colors = {
+    'light': {
+        'bg_primary': '#ffffff',
+        'bg_secondary': '#f0f2f6',
+        'text_primary': '#262730',
+        'text_secondary': '#666666',
+        'accent': '#1f77b4',
+        'sidebar_bg': '#e8f4f8'
+    },
+    'dark': {
+        'bg_primary': '#0e1117',
+        'bg_secondary': '#262730',
+        'text_primary': '#fafafa',
+        'text_secondary': '#a6a6a6',
+        'accent': '#00d4ff',
+        'sidebar_bg': '#1e1e1e'
+    }
+}
+
+current_theme = 'dark' if st.session_state.dark_mode else 'light'
+colors = theme_colors[current_theme]
+
+st.markdown(f"""
 <style>
-    .main-header {
+    .main-header {{
         font-size: 2.5rem;
-        color: #1f77b4;
+        color: {colors['accent']};
         text-align: center;
         margin-bottom: 2rem;
         font-weight: bold;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
+    }}
+    .metric-card {{
+        background-color: {colors['bg_secondary']};
         padding: 1rem;
         border-radius: 10px;
         margin: 0.5rem 0;
-    }
-    .sidebar .sidebar-content {
-        background-color: #e8f4f8;
-    }
-    .info-box {
-        background-color: #e6f3ff;
-        padding: 1rem;
-        border-left: 4px solid #1f77b4;
-        margin: 1rem 0;
-        border-radius: 5px;
-    }
-    .warning-box {
-        background-color: #fff3cd;
-        padding: 1rem;
-        border-left: 4px solid #ffc107;
-        margin: 1rem 0;
-        border-radius: 5px;
-    }
+    }}
+    .credit-footer {{
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background-color: {colors['bg_secondary']};
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        color: {colors['text_secondary']};
+        z-index: 999;
+        border: 1px solid {colors['accent']};
+    }}
+    .credit-footer a {{
+        color: {colors['accent']};
+        text-decoration: none;
+    }}
+    .credit-footer a:hover {{
+        text-decoration: underline;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -144,12 +178,11 @@ def categorize_rainfall(value):
 def main():
     st.markdown('<h1 class="main-header">🌦️ Dashboard Data Cuaca BMKG Jawa Barat</h1>', unsafe_allow_html=True)
     
-    # Informasi untuk pengguna
-    st.markdown("""
-    <div class="info-box">
-        <h4>ℹ️ Tentang Dashboard Ini</h4>
-        <p>Dashboard ini menampilkan data cuaca harian dari 5 kota/kabupaten di Jawa Barat yang dikumpulkan oleh BMKG. 
-        Anda dapat melihat pola cuaca, membandingkan antar wilayah, dan menganalisis tren sepanjang waktu.</p>
+    # Credit footer
+    st.markdown(f"""
+    <div class="credit-footer">
+        Made by <strong>ElySimp</strong><br>
+        <a href="https://github.com/ElySimp/Curah-Hujan-Datasets" target="_blank">GitHub Repository</a>
     </div>
     """, unsafe_allow_html=True)
     
@@ -160,9 +193,9 @@ def main():
     if df is None or df.empty:
         st.error("Data tidak tersedia. Silakan periksa koneksi database dan data.")
         return
-    
+
     # Filter di sidebar
-    st.sidebar.header("� Pengaturan Filter")
+    st.sidebar.header("🔧 Pengaturan Filter")
     
     # Filter lokasi dengan opsi multi-select
     all_locations = sorted(df['lokasi_lengkap'].unique().tolist())
@@ -218,7 +251,7 @@ def main():
     
     # Tab utama dengan nama yang lebih sederhana
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "� Ringkasan", "🌧️ Analisis Hujan", "🌡️ Suhu", "💨 Angin & Kelembaban", "� Grafik Waktu"
+        "📊 Ringkasan", "🌧️ Analisis Hujan", "🌡️ Suhu", "💨 Angin & Kelembaban", "📈 Grafik Waktu"
     ])
     
     with tab1:
@@ -259,19 +292,6 @@ def overview_tab(df):
         avg_rainfall = df['curah_hujan_clean'].mean()
         st.metric("Rata-rata Hujan Harian", f"{avg_rainfall:.1f} mm" if not pd.isna(avg_rainfall) else "Tidak ada data")
     
-    # Penjelasan untuk orang awam
-    st.markdown("""
-    <div class="info-box">
-        <h4>📝 Penjelasan Angka di Atas:</h4>
-        <ul>
-            <li><strong>Total Data Harian:</strong> Jumlah hari yang datanya tersedia di database</li>
-            <li><strong>Jumlah Wilayah:</strong> Berapa kota/kabupaten yang dipantau</li>
-            <li><strong>Rentang Waktu:</strong> Periode data dari tanggal awal hingga akhir</li>
-            <li><strong>Rata-rata Hujan Harian:</strong> Berapa mm hujan per hari secara rata-rata</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
     # Kualitas data
     st.subheader("📋 Kelengkapan Data")
     
@@ -296,13 +316,6 @@ def overview_tab(df):
                            color_continuous_scale='Reds')
         fig_missing.update_layout(height=400)
         st.plotly_chart(fig_missing, use_container_width=True)
-        
-        st.markdown("""
-        <div class="warning-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Semakin tinggi batang, semakin banyak data yang hilang untuk jenis pengukuran tersebut.
-        </div>
-        """, unsafe_allow_html=True)
     
     with col2:
         # Distribusi data per lokasi
@@ -311,32 +324,10 @@ def overview_tab(df):
                             title="Distribusi Data per Wilayah")
         fig_location.update_layout(height=400)
         st.plotly_chart(fig_location, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Diagram ini menunjukkan seberapa banyak data yang tersedia untuk setiap wilayah.
-        </div>
-        """, unsafe_allow_html=True)
 
 def rainfall_tab(df):
     """Tab analisis curah hujan"""
     st.subheader("🌧️ Analisis Curah Hujan")
-    
-    # Penjelasan untuk orang awam
-    st.markdown("""
-    <div class="info-box">
-        <h4>🌧️ Tentang Curah Hujan:</h4>
-        <p>Curah hujan diukur dalam milimeter (mm). Sebagai gambaran:</p>
-        <ul>
-            <li><strong>0 mm:</strong> Tidak hujan</li>
-            <li><strong>1-5 mm:</strong> Hujan ringan (seperti gerimis)</li>
-            <li><strong>6-20 mm:</strong> Hujan sedang</li>
-            <li><strong>21-50 mm:</strong> Hujan lebat</li>
-            <li><strong>50+ mm:</strong> Hujan sangat lebat (banjir mungkin terjadi)</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -347,13 +338,6 @@ def rainfall_tab(df):
                          title="Sebaran Intensitas Hujan",
                          color_discrete_sequence=px.colors.qualitative.Set3)
         st.plotly_chart(fig_dist, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Diagram ini menunjukkan seberapa sering terjadi berbagai jenis hujan di wilayah yang dipilih.
-        </div>
-        """, unsafe_allow_html=True)
     
     with col2:
         # Hujan bulanan
@@ -363,13 +347,6 @@ def rainfall_tab(df):
                            labels={'curah_hujan_clean': 'Curah Hujan (mm)', 'nama_bulan': 'Bulan'})
         fig_monthly.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig_monthly, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Kotak menunjukkan rata-rata hujan per bulan. Kotak lebih tinggi = lebih banyak hujan.
-        </div>
-        """, unsafe_allow_html=True)
     
     # Perbandingan hujan antar lokasi
     st.subheader("📊 Perbandingan Hujan Antar Wilayah")
@@ -378,14 +355,6 @@ def rainfall_tab(df):
         'curah_hujan_clean': ['mean', 'sum', 'count']
     }).round(2)
     location_rainfall.columns = ['Rata-rata Harian (mm)', 'Total (mm)', 'Hari dengan Data']
-    
-    # Tambahkan penjelasan kolom
-    st.markdown("""
-    **Penjelasan Tabel:**
-    - **Rata-rata Harian:** Berapa mm hujan per hari secara rata-rata
-    - **Total:** Jumlah seluruh hujan dalam periode yang dipilih
-    - **Hari dengan Data:** Berapa hari yang datanya tersedia
-    """)
     
     st.dataframe(location_rainfall, use_container_width=True)
     
@@ -405,30 +374,10 @@ def rainfall_tab(df):
                               color_continuous_scale="Blues",
                               labels={'x': 'Bulan', 'y': 'Wilayah', 'color': 'Hujan (mm)'})
         st.plotly_chart(fig_heatmap, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca Heatmap:</strong><br>
-            Warna lebih gelap = hujan lebih banyak. Anda bisa melihat bulan apa yang paling banyak hujan di setiap wilayah.
-        </div>
-        """, unsafe_allow_html=True)
 
 def temperature_tab(df):
     """Tab analisis suhu"""
     st.subheader("🌡️ Analisis Suhu")
-    
-    # Penjelasan untuk orang awam
-    st.markdown("""
-    <div class="info-box">
-        <h4>🌡️ Tentang Suhu:</h4>
-        <p>Suhu diukur dalam derajat Celsius (°C). BMKG mencatat 3 jenis suhu setiap hari:</p>
-        <ul>
-            <li><strong>Suhu Minimum:</strong> Suhu terdingin dalam sehari (biasanya dini hari)</li>
-            <li><strong>Suhu Maksimum:</strong> Suhu terpanas dalam sehari (biasanya siang hari)</li>
-            <li><strong>Suhu Rata-rata:</strong> Rata-rata suhu sepanjang hari</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -462,13 +411,6 @@ def temperature_tab(df):
             height=400
         )
         st.plotly_chart(fig_temp, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Setiap garis menunjukkan pola suhu di satu wilayah. Garis yang lebih tinggi = daerah yang lebih panas.
-        </div>
-        """, unsafe_allow_html=True)
     
     with col2:
         # Distribusi suhu
@@ -488,13 +430,6 @@ def temperature_tab(df):
                              box=True,
                              labels={'suhu': 'Suhu (°C)', 'jenis_suhu': 'Jenis Suhu'})
         st.plotly_chart(fig_violin, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Bentuk violin menunjukkan sebaran suhu. Semakin lebar = semakin sering terjadi suhu tersebut.
-        </div>
-        """, unsafe_allow_html=True)
     
     # Tren suhu bulanan
     st.subheader("📈 Tren Suhu Sepanjang Tahun")
@@ -506,7 +441,7 @@ def temperature_tab(df):
     
     # Pilihan jenis suhu untuk ditampilkan
     temp_type = st.selectbox(
-        "Pilih jenis suhu yang ingin dilihat:",
+        "Pilih jenis suhu:",
         ["suhu_rata", "suhu_min", "suhu_max"],
         format_func=lambda x: {"suhu_rata": "Suhu Rata-rata", "suhu_min": "Suhu Minimum", "suhu_max": "Suhu Maksimum"}[x]
     )
@@ -518,31 +453,10 @@ def temperature_tab(df):
                              markers=True)
     fig_monthly_temp.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_monthly_temp, use_container_width=True)
-    
-    st.markdown("""
-    <div class="info-box">
-        <strong>💡 Cara Membaca:</strong><br>
-        Garis menunjukkan bagaimana suhu berubah sepanjang tahun di setiap wilayah. 
-        Titik tertinggi = bulan terpanas, titik terendah = bulan terdingin.
-    </div>
-    """, unsafe_allow_html=True)
 
 def wind_humidity_tab(df):
     """Tab analisis angin dan kelembaban"""
     st.subheader("💨 Analisis Angin & Kelembaban")
-    
-    # Penjelasan untuk orang awam
-    st.markdown("""
-    <div class="info-box">
-        <h4>💨 Tentang Angin & Kelembaban:</h4>
-        <ul>
-            <li><strong>Kelembaban:</strong> Seberapa banyak uap air di udara (0-100%). 
-                Kelembaban tinggi = udara terasa pengap, kelembaban rendah = udara terasa kering.</li>
-            <li><strong>Kecepatan Angin:</strong> Seberapa cepat angin bertiup (meter per detik). 
-                Angin kencang bisa membuat suhu terasa lebih sejuk.</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -553,14 +467,6 @@ def wind_humidity_tab(df):
                             labels={'kelembaban_rata': 'Kelembaban (%)', 'lokasi_lengkap': 'Wilayah'})
         fig_humidity.update_xaxes(tickangle=45)
         st.plotly_chart(fig_humidity, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Kotak lebih tinggi = kelembaban lebih tinggi = udara lebih pengap.
-            Biasanya kelembaban 60-80% terasa nyaman.
-        </div>
-        """, unsafe_allow_html=True)
     
     with col2:
         # Distribusi kecepatan angin
@@ -568,17 +474,9 @@ def wind_humidity_tab(df):
                               title="Distribusi Kecepatan Angin",
                               labels={'kecepatan_angin_rata': 'Kecepatan Angin (m/s)', 'count': 'Jumlah Hari'})
         st.plotly_chart(fig_wind, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Grafik menunjukkan seberapa sering terjadi angin dengan kecepatan tertentu.
-            Angin 2-5 m/s = sepoi-sepoi, >10 m/s = cukup kencang.
-        </div>
-        """, unsafe_allow_html=True)
     
     # Perbandingan antar wilayah
-    st.subheader("� Perbandingan Kondisi Udara Antar Wilayah")
+    st.subheader("📊 Perbandingan Kondisi Udara Antar Wilayah")
     
     # Statistik per wilayah
     wind_humidity_stats = df.groupby('lokasi_lengkap').agg({
@@ -593,14 +491,7 @@ def wind_humidity_tab(df):
     
     st.dataframe(wind_humidity_stats, use_container_width=True)
     
-    st.markdown("""
-    **Penjelasan Tabel:**
-    - **Kelembaban Rata-rata:** Tingkat kelembaban normal di wilayah tersebut
-    - **Min/Max:** Kelembaban terendah dan tertinggi yang pernah tercatat
-    - **Angin Rata-rata:** Kecepatan angin normal di wilayah tersebut
-    """)
-    
-    # Hubungan kelembaban dan suhu (menggantikan correlation matrix)
+    # Hubungan kelembaban dan suhu
     if len(df) > 0:
         st.subheader("🌡️ Hubungan Kelembaban dan Suhu")
         
@@ -610,27 +501,10 @@ def wind_humidity_tab(df):
                                labels={'suhu_rata': 'Suhu Rata-rata (°C)', 
                                       'kelembaban_rata': 'Kelembaban (%)'})
         st.plotly_chart(fig_scatter, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Setiap titik mewakili satu hari. Umumnya, saat suhu naik, kelembaban cenderung turun.
-            Titik yang berkumpul menunjukkan pola cuaca normal di wilayah tersebut.
-        </div>
-        """, unsafe_allow_html=True)
 
 def timeseries_tab(df):
     """Tab analisis grafik waktu"""
-    st.subheader("� Analisis Grafik Sepanjang Waktu")
-    
-    # Penjelasan untuk orang awam
-    st.markdown("""
-    <div class="info-box">
-        <h4>📈 Tentang Grafik Waktu:</h4>
-        <p>Grafik ini menunjukkan bagaimana kondisi cuaca berubah dari hari ke hari. 
-        Anda bisa melihat pola musiman, tren jangka panjang, dan membandingkan antar wilayah.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.subheader("📈 Analisis Grafik Sepanjang Waktu")
     
     # Pilihan variabel untuk time series
     variables = {
@@ -640,8 +514,7 @@ def timeseries_tab(df):
         'Kecepatan Angin (m/s)': 'kecepatan_angin_rata'
     }
     
-    selected_var = st.selectbox("Pilih data cuaca yang ingin dilihat grafiknya:", 
-                               list(variables.keys()))
+    selected_var = st.selectbox("Pilih data cuaca:", list(variables.keys()))
     
     # Grafik time series
     if df['lokasi_lengkap'].nunique() > 1:
@@ -653,14 +526,6 @@ def timeseries_tab(df):
                         labels={'tanggal': 'Tanggal', variables[selected_var]: selected_var})
         fig_ts.update_layout(height=500)
         st.plotly_chart(fig_ts, use_container_width=True)
-        
-        st.markdown("""
-        <div class="info-box">
-            <strong>💡 Cara Membaca:</strong><br>
-            Setiap garis berwarna mewakili satu wilayah. Naik-turunnya garis menunjukkan perubahan cuaca dari hari ke hari.
-            Anda bisa klik nama wilayah di legenda untuk menyembunyikan/menampilkan garis tersebut.
-        </div>
-        """, unsafe_allow_html=True)
     else:
         daily_data = df.groupby('tanggal')[variables[selected_var]].mean().reset_index()
         
@@ -671,22 +536,13 @@ def timeseries_tab(df):
         st.plotly_chart(fig_ts, use_container_width=True)
     
     # Moving averages
-    st.subheader("� Rata-rata Bergerak (Tren Halus)")
-    
-    st.markdown("""
-    <div class="info-box">
-        <h4>📊 Apa itu Rata-rata Bergerak?</h4>
-        <p>Rata-rata bergerak membantu melihat tren yang lebih halus dengan mengurangi naik-turun harian yang tajam.
-        Misalnya, rata-rata 7 hari akan menunjukkan tren mingguan.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.subheader("📊 Rata-rata Bergerak")
     
     col1, col2 = st.columns([1, 3])
     
     with col1:
-        window_size = st.slider("Pilih periode rata-rata (hari):", 
-                               min_value=3, max_value=30, value=7,
-                               help="3 hari = tren jangka pendek, 30 hari = tren jangka panjang")
+        window_size = st.slider("Periode rata-rata (hari):", 
+                               min_value=3, max_value=30, value=7)
     
     # Hitung moving averages untuk setiap lokasi
     ma_data = []
@@ -705,14 +561,6 @@ def timeseries_tab(df):
                     labels={'tanggal': 'Tanggal', f'MA_{window_size}': f'{selected_var} (Rata-rata)'})
     fig_ma.update_layout(height=500)
     st.plotly_chart(fig_ma, use_container_width=True)
-    
-    st.markdown("""
-    <div class="info-box">
-        <strong>💡 Cara Membaca:</strong><br>
-        Grafik ini menunjukkan tren yang lebih halus. Garis yang naik menunjukkan kondisi membaik,
-        garis yang turun menunjukkan kondisi memburuk dalam periode yang Anda pilih.
-    </div>
-    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
