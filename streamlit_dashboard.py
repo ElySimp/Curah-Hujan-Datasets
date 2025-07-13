@@ -95,16 +95,35 @@ st.markdown(f"""
 def init_connection():
     """Koneksi ke database MySQL"""
     try:
+        # Debug: cek environment variables
+        host = os.getenv('MYSQL_HOST')
+        user = os.getenv('MYSQL_USER')
+        password = os.getenv('MYSQL_PASSWORD')
+        database = os.getenv('MYSQL_DATABASE')
+        port = os.getenv('MYSQL_PORT')
+        
+        # Debugging info (hanya tampilkan jika ada masalah)
+        if not all([host, user, password, database, port]):
+            st.error("❌ Environment variables tidak lengkap!")
+            st.write(f"Host: {host}, User: {user}, Database: {database}, Port: {port}")
+            return None
+        
         connection = mysql.connector.connect(
-            host=os.getenv('MYSQL_HOST'),
-            user=os.getenv('MYSQL_USER'),
-            password=os.getenv('MYSQL_PASSWORD'),
-            database=os.getenv('MYSQL_DATABASE'),
-            port=int(os.getenv('MYSQL_PORT'))
+            host=host,
+            user=user,
+            password=password,
+            database=database,
+            port=int(port),
+            connection_timeout=10,  # Tambah timeout
+            autocommit=True  # Tambah autocommit
         )
         return connection
+    except mysql.connector.Error as e:
+        st.error(f"❌ Koneksi database gagal: {e}")
+        st.error(f"Error Code: {e.errno if hasattr(e, 'errno') else 'Unknown'}")
+        return None
     except Exception as e:
-        st.error(f"Koneksi database gagal: {e}")
+        st.error(f"❌ Error umum: {e}")
         return None
 
 # Data loading functions
@@ -132,15 +151,34 @@ def load_weather_data():
     """
     
     try:
+        # Test koneksi dulu
+        if not conn.is_connected():
+            st.error("❌ Koneksi database terputus")
+            return None
+            
         df = pd.read_sql(query, conn)
-        conn.close()
         
+        if df.empty:
+            st.warning("⚠️ Data berhasil dimuat tapi kosong")
+            return None
+            
         # Pembersihan data
         df = clean_weather_data(df)
+        
+        # Success message
+        st.success(f"✅ Data berhasil dimuat: {len(df):,} records dari {df['lokasi_lengkap'].nunique()} lokasi")
+        
         return df
-    except Exception as e:
-        st.error(f"Error memuat data: {e}")
+        
+    except mysql.connector.Error as e:
+        st.error(f"❌ Error MySQL: {e}")
         return None
+    except Exception as e:
+        st.error(f"❌ Error memuat data: {e}")
+        return None
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 
 def clean_weather_data(df):
     """Membersihkan data cuaca dengan menangani nilai khusus"""
@@ -196,6 +234,12 @@ def main():
 
     # Filter di sidebar
     st.sidebar.header("🔧 Pengaturan Filter")
+    
+    # Tombol untuk clear cache jika ada masalah
+    if st.sidebar.button("🔄 Refresh Data", help="Klik jika data tidak muncul"):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
     
     # Filter lokasi dengan opsi multi-select
     all_locations = sorted(df['lokasi_lengkap'].unique().tolist())
