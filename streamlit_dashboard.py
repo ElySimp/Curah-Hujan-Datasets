@@ -260,8 +260,8 @@ def main():
     st.sidebar.markdown("---")
     
     # Tab utama dengan nama yang lebih sederhana
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📊 Ringkasan", "🌧️ Analisis Hujan", "🌡️ Suhu", "💨 Angin & Kelembaban", "📈 Grafik Waktu"
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "📊 Ringkasan", "🌧️ Analisis Hujan", "🌡️ Suhu", "💨 Angin & Kelembaban", "📈 Grafik Waktu", "📋 Pivot Table"
     ])
     
     with tab1:
@@ -278,6 +278,9 @@ def main():
     
     with tab5:
         timeseries_tab(filtered_df)
+    
+    with tab6:
+        pivot_table_tab(filtered_df)
 
 def overview_tab(df):
     """Tab ringkasan data"""
@@ -389,12 +392,22 @@ def rainfall_tab(df):
     if df['lokasi_lengkap'].nunique() > 1:
         st.subheader("🗓️ Pola Hujan Bulanan per Wilayah")
         
+        # Definisi urutan bulan yang benar (dalam bahasa Inggris sesuai database)
+        month_order = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ]
+        
         pivot_rainfall = df.pivot_table(
             values='curah_hujan_clean', 
             index='lokasi_lengkap', 
             columns='nama_bulan', 
             aggfunc='mean'
         )
+        
+        # Urutkan kolom berdasarkan urutan bulan yang benar
+        available_months = [month for month in month_order if month in pivot_rainfall.columns]
+        pivot_rainfall = pivot_rainfall.reindex(columns=available_months)
         
         fig_heatmap = px.imshow(pivot_rainfall, 
                               title="Rata-rata Curah Hujan Bulanan (mm)",
@@ -604,6 +617,319 @@ def timeseries_tab(df):
                     color_discrete_map=location_colors)
     fig_ma.update_layout(height=500)
     st.plotly_chart(fig_ma, use_container_width=True)
+
+def pivot_table_tab(df):
+    """Tab untuk analisis pivot table interaktif"""
+    st.subheader("📋 Analisis Pivot Table")
+    
+    # Definisi urutan bulan yang benar (dalam bahasa Inggris sesuai database)
+    month_order = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+    
+    # Pilihan jenis pivot table
+    pivot_type = st.selectbox(
+        "Pilih jenis analisis pivot table:",
+        [
+            "Curah Hujan Bulanan per Lokasi",
+            "Statistik Cuaca per Wilayah",
+            "Analisis Musiman",
+            "Pivot Table Kustom"
+        ]
+    )
+    
+    if pivot_type == "Curah Hujan Bulanan per Lokasi":
+        st.subheader("🌧️ Pivot Table: Curah Hujan Bulanan per Lokasi")
+        
+        # Aggregation options
+        agg_option = st.radio(
+            "Pilih metode agregasi:",
+            ["Rata-rata", "Maksimum", "Minimum"],
+            horizontal=True
+        )
+        
+        agg_func_map = {
+            "Rata-rata": "mean",
+            "Maksimum": "max",
+            "Minimum": "min"
+        }
+        
+        # Buat pivot table
+        pivot_rainfall = df.pivot_table(
+            values='curah_hujan_clean',
+            index='lokasi_lengkap',
+            columns='nama_bulan',
+            aggfunc=agg_func_map[agg_option],
+            fill_value=0
+        ).round(2)
+        
+        # Urutkan kolom berdasarkan urutan bulan yang benar
+        available_months = [month for month in month_order if month in pivot_rainfall.columns]
+        pivot_rainfall = pivot_rainfall.reindex(columns=available_months)
+        
+        st.write(f"**{agg_option} Curah Hujan (mm) per Bulan dan Lokasi:**")
+        st.dataframe(pivot_rainfall, use_container_width=True)
+        
+        # Download button
+        csv = pivot_rainfall.to_csv()
+        st.download_button(
+            label="💾 Download CSV",
+            data=csv,
+            file_name=f"pivot_curah_hujan_{agg_option.lower()}.csv",
+            mime="text/csv"
+        )
+        
+        # Visualisasi heatmap
+        fig_heatmap = px.imshow(
+            pivot_rainfall,
+            title=f"Heatmap: {agg_option} Curah Hujan Bulanan",
+            color_continuous_scale="Blues",
+            labels={'x': 'Bulan', 'y': 'Lokasi', 'color': f'Hujan (mm)'}
+        )
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+    
+    elif pivot_type == "Statistik Cuaca per Wilayah":
+        st.subheader("🌤️ Pivot Table: Statistik Cuaca Komprehensif")
+        
+        # Multi-index pivot dengan berbagai variabel cuaca
+        weather_stats = df.groupby('lokasi_lengkap').agg({
+            'curah_hujan_clean': ['count', 'mean', 'max'],
+            'suhu_rata': ['mean', 'min', 'max'],
+            'kelembaban_rata': ['mean', 'min', 'max'],
+            'kecepatan_angin_rata': ['mean', 'max']
+        }).round(2)
+        
+        # Flatten column names
+        weather_stats.columns = [
+            'Hari Berdata', 'Hujan Rata-rata', 'Hujan Maks',
+            'Suhu Rata-rata', 'Suhu Min', 'Suhu Max',
+            'Kelembaban Rata-rata', 'Kelembaban Min', 'Kelembaban Max',
+            'Angin Rata-rata', 'Angin Maksimum'
+        ]
+        
+        st.write("**Statistik Cuaca Komprehensif per Wilayah:**")
+        st.dataframe(weather_stats, use_container_width=True)
+        
+        # Download button
+        csv = weather_stats.to_csv()
+        st.download_button(
+            label="💾 Download CSV",
+            data=csv,
+            file_name="pivot_statistik_cuaca.csv",
+            mime="text/csv"
+        )
+        
+        # Bar chart untuk perbandingan
+        metric_to_plot = st.selectbox(
+            "Pilih metrik untuk visualisasi:",
+            weather_stats.columns.tolist()
+        )
+        
+        fig_bar = px.bar(
+            x=weather_stats.index,
+            y=weather_stats[metric_to_plot],
+            title=f"Perbandingan {metric_to_plot} Antar Wilayah",
+            labels={'x': 'Lokasi', 'y': metric_to_plot}
+        )
+        fig_bar.update_xaxes(tickangle=45)
+        st.plotly_chart(fig_bar, use_container_width=True)
+    
+    elif pivot_type == "Analisis Musiman":
+        st.subheader("🍂 Pivot Table: Analisis Musiman")
+        
+        # Definisi musim berdasarkan bulan (nama bulan dalam bahasa Inggris)
+        def get_season(month):
+            if month in ['December', 'January', 'February']:
+                return 'Musim Hujan'
+            elif month in ['March', 'April', 'May']:
+                return 'Peralihan ke Kemarau'
+            elif month in ['June', 'July', 'August']:
+                return 'Musim Kemarau'
+            else:
+                return 'Peralihan ke Hujan'
+        
+        df_season = df.copy()
+        df_season['musim'] = df_season['nama_bulan'].apply(get_season)
+        
+        variable_options = {
+            "Curah Hujan": "curah_hujan_clean",
+            "Suhu Rata-rata": "suhu_rata",
+            "Kelembaban": "kelembaban_rata",
+            "Kecepatan Angin": "kecepatan_angin_rata"
+        }
+        
+        selected_var = st.selectbox("Pilih variabel untuk analisis musiman:", list(variable_options.keys()))
+        
+        seasonal_pivot = df_season.pivot_table(
+            values=variable_options[selected_var],
+            index='lokasi_lengkap',
+            columns='musim',
+            aggfunc='mean',
+            fill_value=0
+        ).round(2)
+        
+        # Reorder columns untuk urutan musim yang logis
+        season_order = ['Musim Kemarau', 'Peralihan ke Hujan', 'Musim Hujan', 'Peralihan ke Kemarau']
+        available_seasons = [season for season in season_order if season in seasonal_pivot.columns]
+        seasonal_pivot = seasonal_pivot.reindex(columns=available_seasons)
+        
+        st.write(f"**Rata-rata {selected_var} per Musim:**")
+        st.dataframe(seasonal_pivot, use_container_width=True)
+        
+        # Download button
+        csv = seasonal_pivot.to_csv()
+        st.download_button(
+            label="💾 Download CSV",
+            data=csv,
+            file_name=f"pivot_musiman_{selected_var.lower().replace(' ', '_')}.csv",
+            mime="text/csv"
+        )
+        
+        # Radar chart untuk analisis musiman
+        fig_radar = go.Figure()
+        
+        # Gunakan warna konsisten
+        _, location_colors = get_consistent_colors()
+        
+        for i, location in enumerate(seasonal_pivot.index):
+            color = location_colors.get(location, px.colors.qualitative.Set2[i % len(px.colors.qualitative.Set2)])
+            fig_radar.add_trace(go.Scatterpolar(
+                r=seasonal_pivot.loc[location].values,
+                theta=seasonal_pivot.columns,
+                fill='toself',
+                name=location,
+                line_color=color
+            ))
+        
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True)
+            ),
+            showlegend=True,
+            title=f"Perbandingan {selected_var} Antar Musim"
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
+    
+    elif pivot_type == "Pivot Table Kustom":
+        st.subheader("⚙️ Buat Pivot Table Kustom")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # Pilih index (baris)
+            index_options = ['lokasi_lengkap', 'nama_bulan', 'tahun', 'curah_hujan_kategori']
+            selected_index = st.selectbox("Pilih Index (Baris):", index_options)
+        
+        with col2:
+            # Pilih columns
+            column_options = ['nama_bulan', 'tahun', 'lokasi_lengkap', 'curah_hujan_kategori']
+            column_options = [col for col in column_options if col != selected_index]
+            selected_columns = st.selectbox("Pilih Columns (Kolom):", column_options)
+        
+        with col3:
+            # Pilih values dan aggregation
+            value_options = {
+                "Curah Hujan": "curah_hujan_clean",
+                "Suhu Rata-rata": "suhu_rata", 
+                "Suhu Minimum": "suhu_min",
+                "Suhu Maksimum": "suhu_max",
+                "Kelembaban": "kelembaban_rata",
+                "Kecepatan Angin": "kecepatan_angin_rata"
+            }
+            selected_value = st.selectbox("Pilih Values:", list(value_options.keys()))
+        
+        # Pilih fungsi agregasi yang relevan untuk data cuaca
+        agg_function = st.selectbox(
+            "Pilih Fungsi Agregasi:",
+            ["mean", "count", "max", "min", "std"],
+            format_func=lambda x: {
+                "mean": "Rata-rata",
+                "count": "Jumlah",
+                "max": "Maksimum", 
+                "min": "Minimum",
+                "std": "Standar Deviasi"
+            }[x]
+        )
+        
+        # Buat pivot table kustom
+        try:
+            custom_pivot = df.pivot_table(
+                values=value_options[selected_value],
+                index=selected_index,
+                columns=selected_columns,
+                aggfunc=agg_function,
+                fill_value=0
+            ).round(2)
+            
+            # Jika columns adalah nama_bulan, urutkan sesuai kalender
+            if selected_columns == 'nama_bulan':
+                available_months = [month for month in month_order if month in custom_pivot.columns]
+                custom_pivot = custom_pivot.reindex(columns=available_months)
+            
+            st.write(f"**Pivot Table: {selected_value} per {selected_index} dan {selected_columns}**")
+            st.dataframe(custom_pivot, use_container_width=True)
+            
+            # Download button
+            csv = custom_pivot.to_csv()
+            st.download_button(
+                label="💾 Download CSV",
+                data=csv,
+                file_name=f"pivot_kustom_{selected_value.lower().replace(' ', '_')}.csv",
+                mime="text/csv"
+            )
+            
+            # Visualisasi otomatis jika ukuran data memungkinkan
+            if custom_pivot.shape[0] <= 10 and custom_pivot.shape[1] <= 12:
+                viz_type = st.radio("Pilih visualisasi:", ["Heatmap", "Bar Chart", "Line Chart"], horizontal=True)
+                
+                if viz_type == "Heatmap":
+                    fig_custom = px.imshow(
+                        custom_pivot,
+                        title=f"Heatmap: {selected_value}",
+                        color_continuous_scale="Viridis",
+                        labels={'x': selected_columns, 'y': selected_index, 'color': selected_value}
+                    )
+                    st.plotly_chart(fig_custom, use_container_width=True)
+                    
+                elif viz_type == "Bar Chart":
+                    # Ambil satu kolom untuk bar chart
+                    if len(custom_pivot.columns) > 1:
+                        selected_col = st.selectbox("Pilih kolom untuk Bar Chart:", custom_pivot.columns)
+                        fig_custom = px.bar(
+                            x=custom_pivot.index,
+                            y=custom_pivot[selected_col],
+                            title=f"Bar Chart: {selected_value} - {selected_col}",
+                            labels={'x': selected_index, 'y': selected_value}
+                        )
+                    else:
+                        fig_custom = px.bar(
+                            x=custom_pivot.index,
+                            y=custom_pivot.iloc[:, 0],
+                            title=f"Bar Chart: {selected_value}",
+                            labels={'x': selected_index, 'y': selected_value}
+                        )
+                    st.plotly_chart(fig_custom, use_container_width=True)
+                    
+                elif viz_type == "Line Chart":
+                    custom_melted = custom_pivot.reset_index().melt(
+                        id_vars=selected_index,
+                        var_name=selected_columns,
+                        value_name=selected_value
+                    )
+                    fig_custom = px.line(
+                        custom_melted,
+                        x=selected_columns,
+                        y=selected_value,
+                        color=selected_index,
+                        title=f"Line Chart: {selected_value}",
+                        markers=True
+                    )
+                    st.plotly_chart(fig_custom, use_container_width=True)
+                    
+        except Exception as e:
+            st.error(f"Error dalam membuat pivot table: {str(e)}")
+            st.info("Coba kombinasi index dan column yang berbeda")
 
 if __name__ == "__main__":
     main()
