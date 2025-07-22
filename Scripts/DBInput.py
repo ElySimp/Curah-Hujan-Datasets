@@ -37,6 +37,9 @@ def convert_value(val):
     if pd.isna(val) or val == '-' or val == '' or str(val).strip() == '-':
         return None
     try:
+        # Handle decimal comma (Indonesian format)
+        if isinstance(val, str):
+            val = val.replace(',', '.')
         return float(val)
     except:
         return None
