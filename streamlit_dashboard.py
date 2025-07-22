@@ -119,6 +119,25 @@ def clean_weather_data(df):
     
     df['date'] = pd.to_datetime(df['tanggal'])
     
+    # Map Indonesian month names to English
+    month_mapping = {
+        'Januari': 'January',
+        'Februari': 'February', 
+        'Maret': 'March',
+        'April': 'April',
+        'Mei': 'May',
+        'Juni': 'June',
+        'Juli': 'July',
+        'Agustus': 'August',
+        'September': 'September',
+        'Oktober': 'October',
+        'November': 'November',
+        'Desember': 'December'
+    }
+    
+    df['month_name'] = df['nama_bulan'].map(month_mapping).fillna(df['nama_bulan'])
+    df['year'] = df['tahun']
+    
     return df
 
 def categorize_rainfall(value):
@@ -338,7 +357,7 @@ def rainfall_tab(df):
         st.plotly_chart(fig_dist, use_container_width=True)
     
     with col2:
-        monthly_rainfall = df.groupby(['nama_bulan', 'location_full'])['rainfall_clean'].mean().reset_index()
+        monthly_rainfall = df.groupby(['month_name', 'location_full'])['rainfall_clean'].mean().reset_index()
         
         location_colors = {
             'Bogor (Kabupaten)': '#1f77b4',
@@ -348,9 +367,9 @@ def rainfall_tab(df):
             'Majalengka (Kabupaten)': '#9467bd'
         }
         
-        fig_monthly = px.box(monthly_rainfall, x='nama_bulan', y='rainfall_clean',
+        fig_monthly = px.box(monthly_rainfall, x='month_name', y='rainfall_clean',
                            title="Rainfall Pattern Throughout the Year",
-                           labels={'rainfall_clean': 'Rainfall (mm)', 'nama_bulan': 'Month'})
+                           labels={'rainfall_clean': 'Rainfall (mm)', 'month_name': 'Month'})
         fig_monthly.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig_monthly, use_container_width=True)
     
@@ -374,7 +393,7 @@ def rainfall_tab(df):
         pivot_rainfall = df.pivot_table(
             values='rainfall_clean', 
             index='location_full', 
-            columns='nama_bulan', 
+            columns='month_name', 
             aggfunc='mean'
         )
         
@@ -443,7 +462,7 @@ def temperature_tab(df):
         st.plotly_chart(fig_violin, use_container_width=True)
     
     st.subheader("📈 Temperature Trends Throughout the Year")
-    monthly_temp = df.groupby(['nama_bulan', 'location_full']).agg({
+    monthly_temp = df.groupby(['month_name', 'location_full']).agg({
         'suhu_min': 'mean',
         'suhu_max': 'mean',
         'suhu_rata': 'mean'
@@ -457,10 +476,10 @@ def temperature_tab(df):
         format_func=lambda x: {"suhu_rata": "Average Temperature", "suhu_min": "Minimum Temperature", "suhu_max": "Maximum Temperature"}[x]
     )
     
-    fig_monthly_temp = px.line(monthly_temp, x='nama_bulan', y=temp_type,
+    fig_monthly_temp = px.line(monthly_temp, x='month_name', y=temp_type,
                              color='location_full',
                              title=f"Monthly {temp_type.replace('_', ' ').title()} Trends",
-                             labels={temp_type: 'Temperature (°C)', 'nama_bulan': 'Month'},
+                             labels={temp_type: 'Temperature (°C)', 'month_name': 'Month'},
                              markers=True,
                              color_discrete_map=location_colors)
     fig_monthly_temp.update_layout(xaxis_tickangle=-45)
@@ -609,7 +628,7 @@ def pivot_table_tab(df):
         pivot_rainfall = df.pivot_table(
             values='rainfall_clean',
             index='location_full',
-            columns='nama_bulan',
+            columns='month_name',
             aggfunc=agg_func_map[agg_option],
             fill_value=0
         ).round(2)
@@ -692,7 +711,7 @@ def pivot_table_tab(df):
                 return 'Transition to Rainy'
         
         df_season = df.copy()
-        df_season['musim'] = df_season['nama_bulan'].apply(get_season)
+        df_season['musim'] = df_season['month_name'].apply(get_season)
         
         variable_options = {
             "Rainfall": "rainfall_clean",
@@ -755,11 +774,11 @@ def pivot_table_tab(df):
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            index_options = ['location_full', 'nama_bulan', 'tahun', 'rainfall_category']
+            index_options = ['location_full', 'month_name', 'year', 'rainfall_category']
             selected_index = st.selectbox("Select Index (Rows):", index_options)
         
         with col2:
-            column_options = ['nama_bulan', 'tahun', 'location_full', 'rainfall_category']
+            column_options = ['month_name', 'year', 'location_full', 'rainfall_category']
             column_options = [col for col in column_options if col != selected_index]
             selected_columns = st.selectbox("Select Columns:", column_options)
         
@@ -795,7 +814,7 @@ def pivot_table_tab(df):
                 fill_value=0
             ).round(2)
             
-            if selected_columns == 'nama_bulan':
+            if selected_columns == 'month_name':
                 available_months = [month for month in month_order if month in custom_pivot.columns]
                 custom_pivot = custom_pivot.reindex(columns=available_months)
             
