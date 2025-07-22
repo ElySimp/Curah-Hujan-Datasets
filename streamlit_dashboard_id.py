@@ -336,18 +336,49 @@ def rainfall_tab(df):
     col1, col2 = st.columns(2)
     
     with col1:
-        # Distribusi kategori hujan dengan warna konsisten
+        # Distribusi kategori hujan dengan warna konsisten dan urutan yang tetap
         rainfall_dist = df['curah_hujan_kategori'].value_counts()
+        
+        # Urutan kategori yang diinginkan (hardcoded untuk konsistensi)
+        category_order = [
+            'Tidak Ada Data',
+            'Tidak Hujan',
+            'Hujan Ringan',
+            'Hujan Sedang',
+            'Hujan Lebat',
+            'Hujan Sangat Lebat'
+        ]
         
         # Gunakan warna konsisten
         rainfall_colors, _ = get_consistent_colors()
         
-        # Buat list warna sesuai urutan kategori yang muncul
-        colors = [rainfall_colors.get(category, '#cccccc') for category in rainfall_dist.index]
+        # Reorder data sesuai urutan yang diinginkan
+        ordered_categories = []
+        ordered_values = []
+        ordered_colors = []
         
-        fig_dist = px.pie(values=rainfall_dist.values, names=rainfall_dist.index,
+        for category in category_order:
+            if category in rainfall_dist.index:
+                ordered_categories.append(category)
+                ordered_values.append(rainfall_dist[category])
+                ordered_colors.append(rainfall_colors.get(category, '#cccccc'))
+        
+        # Buat DataFrame untuk kontrol penuh atas urutan
+        pie_data = pd.DataFrame({
+            'kategori': ordered_categories,
+            'nilai': ordered_values,
+            'warna': ordered_colors
+        })
+        
+        fig_dist = px.pie(pie_data, 
+                         values='nilai', 
+                         names='kategori',
                          title="Sebaran Intensitas Hujan",
-                         color_discrete_sequence=colors)
+                         color_discrete_sequence=ordered_colors,
+                         category_orders={'kategori': category_order})
+        
+        # Pastikan urutan legend tetap konsisten
+        fig_dist.update_traces(sort=False)
         st.plotly_chart(fig_dist, use_container_width=True)
     
     with col2:
